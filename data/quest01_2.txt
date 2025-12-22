@@ -1,0 +1,3 @@
+Zaracris,Vyrldra,Vyraris,Zyrixxel,Morilor,Fenzyth,Ulmareth,Brivsaral,Draithkael,Craggnaris,Havvynar,Agnarasis,Naldselor,Malxaril,Quenfarin,Harfelix,Kaleldrith,Balthparth,Tharilcion,Gavvoran
+
+L8,R11,L14,R12,L10,R8,L10,R13,L10,R12,L5,R19,L5,R8,L5,R9,L5,R15,L5,R5,L6,R16,L11,R19,L10,R6,L8,R14,L6
