@@ -1,26 +1,26 @@
+import atomics_ffi
 import gleam/int
 import gleam/list
 import gleam/string
-import native_array
 
 pub type Grid {
-  Grid(data: native_array.Atomics, rows: Int, cols: Int)
+  Grid(data: atomics_ffi.Atomics, rows: Int, cols: Int)
 }
 
 pub fn create_grid(rows: Int, cols: Int) -> Grid {
-  let data = native_array.new(rows * cols, [native_array.Signed(True)])
+  let data = atomics_ffi.new(rows * cols, [atomics_ffi.Signed(True)])
   Grid(data, rows, cols)
 }
 
 pub fn set(grid: Grid, row: Int, col: Int, value: Int) -> Grid {
   let index = { row * grid.cols } + col + 1
-  native_array.put(grid.data, index, value)
+  atomics_ffi.put(grid.data, index, value)
   grid
 }
 
 pub fn get(grid: Grid, row: Int, col: Int) -> Int {
   let index = { row * grid.cols } + col + 1
-  native_array.get(grid.data, index)
+  atomics_ffi.get(grid.data, index)
 }
 
 pub fn to_string(grid: Grid) -> String {
