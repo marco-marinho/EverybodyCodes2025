@@ -1,5 +1,7 @@
+import gleam/dict
 import gleam/int
 import gleam/list
+import gleam/result
 import gleam/string
 import simplifile
 
@@ -38,4 +40,11 @@ fn do_stride(current: Int, end: Int, step: Int, acc: List(Int)) -> List(Int) {
     _ if step < 0 && current < end -> list.reverse(acc)
     _ -> do_stride(current + step, end, step, [current, ..acc])
   }
+}
+
+pub fn count_occurrences(items: List(a)) -> dict.Dict(a, Int) {
+  list.fold(items, dict.new(), fn(counts, item) {
+    let current = dict.get(counts, item) |> result.unwrap(0)
+    dict.insert(counts, item, current + 1)
+  })
 }
