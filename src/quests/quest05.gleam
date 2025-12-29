@@ -11,26 +11,32 @@ type Fish =
   dict.Dict(#(Int, Int), Int)
 
 fn assemble_fish(fish: Fish, numbers: List(Int)) -> Fish {
-  list.fold(numbers, fish, fn(acc, n) { insert_number(acc, n, 0) })
+  list.fold(numbers, fish, fn(acc, n) { insert_number(acc, n) })
 }
 
-fn insert_number(fish: Fish, n: Int, level: Int) -> Fish {
-  case dict.get(fish, #(level, 0)) {
-    Error(_) -> dict.insert(fish, #(level, 0), n)
-    Ok(x) if n > x -> {
-      case dict.get(fish, #(level, 1)) {
-        Error(_) -> dict.insert(fish, #(level, 1), n)
-        Ok(_) -> insert_number(fish, n, level + 1)
+fn insert_number(fish: Fish, n: Int) -> Fish {
+  yielder.unfold(0, fn(level) { yielder.Next(level, level + 1) })
+  |> yielder.map(fn(level) {
+    case dict.get(fish, #(level, 0)) {
+      Error(_) -> Ok(dict.insert(fish, #(level, 0), n))
+      Ok(x) if n > x -> {
+        case dict.get(fish, #(level, 1)) {
+          Error(_) -> Ok(dict.insert(fish, #(level, 1), n))
+          Ok(_) -> Error(Nil)
+        }
       }
-    }
-    Ok(x) if n < x -> {
-      case dict.get(fish, #(level, -1)) {
-        Error(_) -> dict.insert(fish, #(level, -1), n)
-        Ok(_) -> insert_number(fish, n, level + 1)
+      Ok(x) if n < x -> {
+        case dict.get(fish, #(level, -1)) {
+          Error(_) -> Ok(dict.insert(fish, #(level, -1), n))
+          Ok(_) -> Error(Nil)
+        }
       }
+      _ -> Error(Nil)
     }
-    _ -> insert_number(fish, n, level + 1)
-  }
+  })
+  |> yielder.find(result.is_ok)
+  |> result.flatten
+  |> util.force_unwrap
 }
 
 fn get_quality(fish: Fish) -> String {
@@ -81,19 +87,18 @@ fn get_fish_level(fish: Fish, level: Int) -> Int {
 }
 
 fn sort_fish(fish1: Fish, fish2: Fish) -> Order {
-  let assert Ok(res) =
-    yielder.unfold(0, fn(level) { yielder.Next(level, level + 1) })
-    |> yielder.map(fn(level) {
-      case get_fish_level(fish1, level), get_fish_level(fish2, level) {
-        x, y if x < y -> Ok(Lt)
-        x, y if x > y -> Ok(Gt)
-        0, 0 -> Ok(Eq)
-        _, _ -> Error(Nil)
-      }
-    })
-    |> yielder.find(result.is_ok)
-    |> result.flatten
-  res
+  yielder.unfold(0, fn(level) { yielder.Next(level, level + 1) })
+  |> yielder.map(fn(level) {
+    case get_fish_level(fish1, level), get_fish_level(fish2, level) {
+      x, y if x < y -> Ok(Lt)
+      x, y if x > y -> Ok(Gt)
+      0, 0 -> Ok(Eq)
+      _, _ -> Error(Nil)
+    }
+  })
+  |> yielder.find(result.is_ok)
+  |> result.flatten
+  |> util.force_unwrap
 }
 
 fn sort_records(r1: #(Int, Fish, Int), r2: #(Int, Fish, Int)) -> Order {
