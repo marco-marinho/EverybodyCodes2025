@@ -10,6 +10,10 @@ import util
 type Fish =
   dict.Dict(#(Int, Int), Int)
 
+type FishRecord {
+  FishRecord(id: Int, fish: Fish, quality: Int)
+}
+
 fn assemble_fish(fish: Fish, numbers: List(Int)) -> Fish {
   list.fold(numbers, fish, fn(acc, n) { insert_number(acc, n) })
 }
@@ -101,17 +105,15 @@ fn sort_fish(fish1: Fish, fish2: Fish) -> Order {
   |> util.force_unwrap
 }
 
-fn sort_records(r1: #(Int, Fish, Int), r2: #(Int, Fish, Int)) -> Order {
-  let #(id1, fish1, quality1) = r1
-  let #(id2, fish2, quality2) = r2
-  case int.compare(quality1, quality2) {
+fn sort_records(r1: FishRecord, r2: FishRecord) -> Order {
+  case int.compare(r1.quality, r2.quality) {
     Lt -> Lt
     Gt -> Gt
     Eq ->
-      case sort_fish(fish1, fish2) {
+      case sort_fish(r1.fish, r2.fish) {
         Lt -> Lt
         Gt -> Gt
-        Eq -> int.compare(id1, id2)
+        Eq -> int.compare(r1.id, r2.id)
       }
   }
 }
@@ -146,9 +148,9 @@ fn part3() -> String {
     |> result.values
   let records =
     list.zip(fishes, qualities)
-    |> list.index_map(fn(x, i) { #(i + 1, x.0, x.1) })
+    |> list.index_map(fn(x, i) { FishRecord(i + 1, x.0, x.1) })
   let sorted_ids =
-    list.sort(records, sort_records) |> list.map(fn(x) { x.0 }) |> list.reverse
+    list.sort(records, sort_records) |> list.map(fn(x) { x.id }) |> list.reverse
   let assert Ok(res) =
     sorted_ids
     |> list.index_map(fn(x, i) { x * { i + 1 } })
