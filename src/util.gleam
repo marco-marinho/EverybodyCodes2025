@@ -48,3 +48,20 @@ pub fn count_occurrences(items: List(a)) -> dict.Dict(a, Int) {
     dict.insert(counts, item, current + 1)
   })
 }
+
+pub fn force_unwrap(res: Result(a, b)) -> a {
+  case res {
+    Ok(val) -> val
+    Error(_) -> panic as "Called force_unwrap on an Error value"
+  }
+}
+
+pub fn first(ilist: List(a)) -> a {
+  let assert Ok(result) = list.first(ilist)
+  result
+}
+
+pub fn last(ilist: List(a)) -> a {
+  let assert Ok(result) = list.last(ilist)
+  result
+}
