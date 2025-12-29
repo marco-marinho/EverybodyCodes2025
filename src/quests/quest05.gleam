@@ -4,6 +4,7 @@ import gleam/list
 import gleam/order.{type Order, Eq, Gt, Lt}
 import gleam/result
 import gleam/string
+import gleam/yielder
 import util
 
 type Fish =
@@ -32,13 +33,15 @@ fn insert_number(fish: Fish, n: Int, level: Int) -> Fish {
   }
 }
 
-fn get_quality(fish: Fish, level: Int, acc: String) -> String {
-  case dict.get(fish, #(level, 0)) {
-    Error(_) -> acc
-    Ok(x) -> {
-      get_quality(fish, level + 1, acc <> int.to_string(x))
-    }
-  }
+fn get_quality(fish: Fish) -> String {
+  yielder.unfold(0, fn(level) { yielder.Next(level, level + 1) })
+  |> yielder.map(fn(level) { dict.get(fish, #(level, 0)) })
+  |> yielder.take_while(result.is_ok)
+  |> yielder.map(fn(res) {
+    let assert Ok(res) = res
+    int.to_string(res)
+  })
+  |> yielder.fold("", fn(acc, x) { acc <> x })
 }
 
 fn parse_line(line: String) -> List(Int) {
@@ -55,7 +58,7 @@ fn get_fish_quality(numbers: List(Int)) -> Int {
     dict.new()
     |> dict.insert(#(0, 0), numbers |> util.first)
   let fish = assemble_fish(fish, numbers |> list.drop(1))
-  let quality = get_quality(fish, 0, "")
+  let quality = get_quality(fish)
   let assert Ok(res) = int.parse(quality)
   res
 }
@@ -77,13 +80,20 @@ fn get_fish_level(fish: Fish, level: Int) -> Int {
   int.parse(num_str) |> result.unwrap(0)
 }
 
-fn sort_fish(fish1: Fish, fish2: Fish, level: Int) -> Order {
-  case get_fish_level(fish1, level), get_fish_level(fish2, level) {
-    x, y if x < y -> Lt
-    x, y if x > y -> Gt
-    0, 0 -> Eq
-    _, _ -> sort_fish(fish1, fish2, level + 1)
-  }
+fn sort_fish(fish1: Fish, fish2: Fish) -> Order {
+  let assert Ok(res) =
+    yielder.unfold(0, fn(level) { yielder.Next(level, level + 1) })
+    |> yielder.map(fn(level) {
+      case get_fish_level(fish1, level), get_fish_level(fish2, level) {
+        x, y if x < y -> Ok(Lt)
+        x, y if x > y -> Ok(Gt)
+        0, 0 -> Ok(Eq)
+        _, _ -> Error(Nil)
+      }
+    })
+    |> yielder.find(result.is_ok)
+    |> result.flatten
+  res
 }
 
 fn sort_records(r1: #(Int, Fish, Int), r2: #(Int, Fish, Int)) -> Order {
@@ -93,7 +103,7 @@ fn sort_records(r1: #(Int, Fish, Int), r2: #(Int, Fish, Int)) -> Order {
     Lt -> Lt
     Gt -> Gt
     Eq ->
-      case sort_fish(fish1, fish2, 0) {
+      case sort_fish(fish1, fish2) {
         Lt -> Lt
         Gt -> Gt
         Eq -> int.compare(id1, id2)
@@ -126,7 +136,7 @@ fn part3() -> String {
   let fishes = numbers |> list.map(fn(x) { assemble_fish(dict.new(), x) })
   let qualities =
     fishes
-    |> list.map(fn(x) { get_quality(x, 0, "") })
+    |> list.map(fn(x) { get_quality(x) })
     |> list.map(int.parse)
     |> result.values
   let records =
