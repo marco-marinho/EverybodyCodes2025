@@ -1,0 +1,15 @@
+Luthardith,Luthoryn,Nyardith,Nyzor,Nyoryn,Luthzor,Urardith,Urzor,Uroryn
+
+L > u
+u > b
+r > a,d,y,b
+z > o
+y > b,n
+o > r
+U > r
+h > a,z,o
+i > t
+N > y
+a > r
+d > i
+t > h

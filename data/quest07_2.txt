@@ -1,0 +1,26 @@
+Pylarryn,Tharilnylor,Lithketh,Pylarkynar,Maralkynar,Sornylor,Sarnylor,Shaemonar,Ildnylor,Lithvel,Tharilvel,Lithnylor,Durnnixis,Lithnixis,Shaemnixis,Maralketh,Pylarnixis,Palthryn,Durnkynar,Pylarralis,Sorox,Ildonar,Shaemcarth,Ildryn,Sornixis,Soronar,Sorryn,Sarketh,Lithkynar,Ildcarth,Palthonar,Palthnixis,Ildvel,Ildnixis,Tharilketh,Sarralis,Tharilonar,Shaemryn,Lithryn,Sarvel,Ildralis,Pylarcarth,Maralvel,Sorvel,Pylarox,Maralnylor,Pylaronar,Lithonar,Maralox,Palthcarth,Pylarketh,Durnvel,Lithox,Sarox,Saronar,Shaemketh,Palthvel,Ildkynar,Sorralis,Pylarnylor,Maralnixis,Palthketh,Shaemnylor,Maralryn,Pylarvel,Ildketh,Durnralis,Lithcarth,Maralcarth,Tharilryn,Tharilkynar,Palthnylor,Shaemvel,Sorketh,Durnryn,Durncarth,Durnketh,Tharilox,Tharilcarth,Tharilralis,Palthkynar,Shaemralis,Maralralis,Sarnixis,Sorkynar,Durnnylor,Tharilnixis,Palthox,Ildox,Sorcarth,Sarryn,Maralonar,Lithralis,Palthralis,Shaemox,Durnox,Sarkynar,Durnonar,Sarcarth,Shaemkynar
+
+i > x,s,v,l
+v > e
+e > t,l,m
+l > o,a,i,t,k,n,c,r,v
+k > y,e
+t > h
+S > a,h,o
+o > r,x,n,v
+u > v
+m > k,n,c,o,r,v
+c > a
+n > y,a,i,k,n,c,o,r,v
+I > l
+x > i
+M > a
+r > n,k,c,t,o,r,a,v,y,i
+L > i
+d > k,n,c,o,r,v
+P > y,a
+h > v,k,n,c,o,r
+D > u
+a > r,l,e,v
+T > h
+y > l,v,n

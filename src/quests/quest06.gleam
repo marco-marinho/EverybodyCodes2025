@@ -62,39 +62,33 @@ fn get_valid(grid: Grid, pos: Int, repeats: Int, max_distance: Int) -> Int {
   let steps =
     yielder.iterate(1, fn(x) { x + 1 })
     |> yielder.take(max_distance)
-  let left =
+  let valid =
     steps
     |> yielder.fold(0, fn(acc, step) {
-      let target_pos = pos - step
-      let wrapped_pos = util.wrap_index(target_pos, grid.cols)
-      case grid.get(grid, 0, wrapped_pos) {
+      let left_pos = pos - step
+      let wrapped_pos_left = util.wrap_index(left_pos, grid.cols)
+      let left = case grid.get(grid, 0, wrapped_pos_left) {
         v if v == target -> {
-          let offset = case target_pos < 0 {
-            True -> { { -target_pos - 1 } / grid.cols } + 1
+          let offset = case left_pos < 0 {
+            True -> { { -left_pos - 1 } / grid.cols } + 1
             False -> 0
           }
-          acc + repeats - offset
+          repeats - offset
         }
-        _ -> acc
+        _ -> 0
       }
-    })
-  let right =
-    steps
-    |> yielder.fold(0, fn(acc, step) {
-      let target_pos = pos + step
-      let wrapped_pos = util.wrap_index(target_pos, grid.cols)
-      case grid.get(grid, 0, wrapped_pos) {
+      let right_pos = pos + step
+      let wrapped_pos_right = util.wrap_index(right_pos, grid.cols)
+      let right = case grid.get(grid, 0, wrapped_pos_right) {
         v if v == target -> {
-          let offset = case target_pos >= grid.cols {
-            True -> target_pos / grid.cols
-            False -> 0
-          }
-          acc + repeats - offset
+          let offset = right_pos / grid.cols
+          repeats - offset
         }
-        _ -> acc
+        _ -> 0
       }
+      acc + left + right
     })
-  left + right
+  valid
 }
 
 fn part3() -> String {
