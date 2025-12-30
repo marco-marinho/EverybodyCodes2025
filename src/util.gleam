@@ -65,3 +65,10 @@ pub fn last(ilist: List(a)) -> a {
   let assert Ok(result) = list.last(ilist)
   result
 }
+
+pub fn zip3(list1: List(a), list2: List(b), list3: List(c)) -> List(#(a, b, c)) {
+  case list1, list2, list3 {
+    [h1, ..t1], [h2, ..t2], [h3, ..t3] -> [#(h1, h2, h3), ..zip3(t1, t2, t3)]
+    _, _, _ -> []
+  }
+}
