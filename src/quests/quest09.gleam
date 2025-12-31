@@ -1,19 +1,88 @@
-import gleam/dict
 import gleam/int
 import gleam/list
 import gleam/result
-import gleam/set
 import gleam/string
-import rslib_ffi
+import glearray
+import grid
+import parallel_map.{MatchSchedulersOnline}
 import util
 
 type DNARecord {
-  DNARecord(sequences: dict.Dict(Int, String), size: Int)
+  DNARecord(
+    sequences: glearray.Array(Int),
+    original_sequence: glearray.Array(String),
+    size: Int,
+  )
+}
+
+type UnionFind {
+  UnionFind(parents: grid.Grid, sizes: grid.Grid)
+}
+
+fn new_union_find(size: Int) -> UnionFind {
+  let uf_grid =
+    list.range(0, size)
+    |> list.fold(grid.create_grid(1, size + 1), fn(acc, i) {
+      grid.set(acc, 0, i, i)
+    })
+  let size_grid =
+    list.range(1, size)
+    |> list.fold(grid.create_grid(1, size + 1), fn(acc, i) {
+      grid.set(acc, 0, i, 1)
+    })
+  UnionFind(uf_grid, size_grid)
+}
+
+fn find(uf: UnionFind, i: Int) -> #(Int, UnionFind) {
+  let parent = grid.get(uf.parents, 0, i)
+  case parent {
+    x if x == i -> #(i, uf)
+    _ -> {
+      let #(new_parent, new_uf) = find(uf, parent)
+      let updated_parents = grid.set(new_uf.parents, 0, i, new_parent)
+      #(new_parent, UnionFind(..new_uf, parents: updated_parents))
+    }
+  }
+}
+
+fn union(uf: UnionFind, i: Int, j: Int) -> UnionFind {
+  let #(root_i, curr_uf) = find(uf, i)
+  let #(root_j, curr_uf) = find(curr_uf, j)
+  case root_i == root_j {
+    True -> curr_uf
+    False -> {
+      case
+        grid.get(curr_uf.sizes, 0, root_i),
+        grid.get(curr_uf.sizes, 0, root_j)
+      {
+        x, y if x >= y -> {
+          let new_sizes = grid.set(curr_uf.sizes, 0, root_i, x + y)
+          let new_parents = grid.set(curr_uf.parents, 0, root_j, root_i)
+          UnionFind(sizes: new_sizes, parents: new_parents)
+        }
+        x, y -> {
+          let new_sizes = grid.set(curr_uf.sizes, 0, root_j, x + y)
+          let new_parents = grid.set(curr_uf.parents, 0, root_i, root_j)
+          UnionFind(sizes: new_sizes, parents: new_parents)
+        }
+      }
+    }
+  }
 }
 
 fn parse_line(line: String) -> String {
   let assert [_, dna] = string.split(line, ":")
   dna
+}
+
+fn to_bits(dna: String) -> Int {
+  case dna {
+    "A" -> 0
+    "C" -> 1
+    "G" -> 2
+    "T" -> 3
+    _ -> panic as "Invalid DNA character"
+  }
 }
 
 fn calc_similarity(dna1: String, dna2: String) -> Int {
@@ -33,69 +102,79 @@ fn test_paternity(
   idx_p1: Int,
   idx_p2: Int,
 ) -> Bool {
-  let chars1 =
-    dict.get(record.sequences, idx_p1)
+  let c =
+    glearray.get(record.sequences, idx_child)
     |> util.force_unwrap
-    |> string.to_graphemes
-  let chars2 =
-    dict.get(record.sequences, idx_p2)
+  let p1 =
+    glearray.get(record.sequences, idx_p1)
     |> util.force_unwrap
-    |> string.to_graphemes
-  let chars_child =
-    dict.get(record.sequences, idx_child)
+  let p2 =
+    glearray.get(record.sequences, idx_p2)
     |> util.force_unwrap
-    |> string.to_graphemes
-  let matches =
-    list.zip(chars_child, list.zip(chars1, chars2))
-    |> list.all(fn(triples) {
-      let #(c, #(p1, p2)) = triples
-      case p1 == p2 {
-        True -> c == p1
-        False -> p1 == c || p2 == c
-      }
-    })
-  matches
-}
-
-fn gen_search_indexes(
-  idx: Int,
-  size: Int,
-  known_children: set.Set(Int),
-) -> List(#(Int, Int, Int)) {
-  let indexes =
-    {
-      use x <- list.flat_map(list.range(1, size))
-      use y <- list.map(list.range(1, size))
-      #(idx, x, y)
-    }
-    |> list.filter(fn(triple) {
-      let #(i, x, y) = triple
-      i != x
-      && i != y
-      && x < y
-      && !set.contains(known_children, x)
-      && !set.contains(known_children, y)
-    })
-  indexes
+  let pc1 = int.bitwise_exclusive_or(p1, c)
+  let pc2 = int.bitwise_exclusive_or(p2, c)
+  let test_result = int.bitwise_and(pc1, pc2)
+  test_result == 0
 }
 
 fn find_parents(
+  x: Int,
+  y: Int,
   record: DNARecord,
   idx_child: Int,
-  known_children: set.Set(Int),
 ) -> Result(#(Int, Int, Int), Nil) {
-  let size = record.size
-  let indexes = gen_search_indexes(idx_child, size, known_children)
-  let res =
-    indexes
-    |> list.find_map(fn(triple) {
-      let #(i, x, y) = triple
-      case test_paternity(record, i, x, y) {
+  case x, y {
+    i, _ if i == idx_child -> find_parents(x + 1, 1, record, idx_child)
+    _, j if j == idx_child -> find_parents(x, y + 1, record, idx_child)
+    i, _ if i > record.size -> Error(Nil)
+    _, j if j > record.size -> find_parents(x + 1, 1, record, idx_child)
+    _, _ -> {
+      case test_paternity(record, idx_child, x, y) {
         True -> Ok(#(idx_child, x, y))
-        False -> Error(Nil)
+        False -> find_parents(x, y + 1, record, idx_child)
       }
+    }
+  }
+}
+
+fn build_records(part: Int) -> DNARecord {
+  let #(sequences, original_sequences) =
+    util.read_input_lines(9, part)
+    |> list.fold(#([0], [""]), fn(acc, line) {
+      let dna_str = parse_line(line)
+      let dna =
+        dna_str
+        |> string.to_graphemes
+        |> list.fold(0, fn(acc, c) {
+          let value = to_bits(c)
+          int.bitwise_or(int.bitwise_shift_left(acc, 2), value)
+        })
+      #([dna, ..acc.0], [dna_str, ..acc.1])
     })
-  res
+  DNARecord(
+    glearray.from_list(list.reverse(sequences)),
+    glearray.from_list(list.reverse(original_sequences)),
+    list.length(sequences) - 1,
+  )
+}
+
+fn find_connections(record: DNARecord) -> List(#(Int, Int, Int)) {
+  list.range(1, record.size)
+  |> parallel_map.list_pmap(
+    fn(idx) {
+      case find_parents(1, 1, record, idx) {
+        Ok(#(child, p1, p2)) -> {
+          Ok(#(child, p1, p2))
+        }
+        Error(_) -> Error(Nil)
+      }
+    },
+    MatchSchedulersOnline,
+    300,
+  )
+  |> list.map(util.force_unwrap)
+  |> list.filter(result.is_ok)
+  |> list.map(util.force_unwrap)
 }
 
 fn part1() -> String {
@@ -107,50 +186,64 @@ fn part1() -> String {
 }
 
 fn part2() -> String {
-  rslib_ffi.rato()
-  let sequences =
-    util.read_input_lines(9, 2)
-    |> list.index_fold(dict.new(), fn(acc, line, idx) {
-      let dna = parse_line(line)
-      dict.insert(acc, idx + 1, dna)
+  let dna_record = build_records(2)
+  let connections = find_connections(dna_record)
+  let similarities =
+    connections
+    |> list.map(fn(triple) {
+      let #(c, p1, p2) = triple
+      let sim1 =
+        calc_similarity(
+          glearray.get(dna_record.original_sequence, p1)
+            |> util.force_unwrap,
+          glearray.get(dna_record.original_sequence, c)
+            |> util.force_unwrap,
+        )
+      let sim2 =
+        calc_similarity(
+          glearray.get(dna_record.original_sequence, p2)
+            |> util.force_unwrap,
+          glearray.get(dna_record.original_sequence, c)
+            |> util.force_unwrap,
+        )
+      sim1 * sim2
     })
-  let dna_record = DNARecord(sequences, dict.size(sequences))
-  let #(_, connections) =
-    list.range(1, dna_record.size)
-    |> list.map_fold(set.new(), fn(known_children, idx) {
-      case find_parents(dna_record, idx, known_children) {
-        Ok(#(child, p1, p2)) -> {
-          let updated_children = set.insert(known_children, child)
-          #(updated_children, Ok(#(child, p1, p2)))
-        }
-        Error(_) -> #(known_children, Error(Nil))
-      }
-    })
-
-  connections
-  |> list.filter(result.is_ok)
-  |> list.map(util.force_unwrap)
-  |> list.map(fn(triple) {
-    let #(child, p1, p2) = triple
-    let s1 =
-      calc_similarity(
-        dict.get(dna_record.sequences, child) |> util.force_unwrap,
-        dict.get(dna_record.sequences, p1) |> util.force_unwrap,
-      )
-    let s2 =
-      calc_similarity(
-        dict.get(dna_record.sequences, child) |> util.force_unwrap,
-        dict.get(dna_record.sequences, p2) |> util.force_unwrap,
-      )
-    s1 * s2
-  })
+  similarities
   |> list.reduce(fn(acc, x) { acc + x })
   |> util.force_unwrap
   |> int.to_string
 }
 
 fn part3() -> String {
-  ""
+  let dna_record = build_records(3)
+  let connections = find_connections(dna_record)
+  let uf =
+    connections
+    |> list.fold(new_union_find(dna_record.size), fn(acc, triple) {
+      let #(c, p1, p2) = triple
+      let acc1 = union(acc, c, p1)
+      union(acc1, c, p2)
+    })
+  let #(max_idx, _) =
+    list.range(1, dna_record.size)
+    |> list.fold(#(0, 0), fn(acc, i) {
+      let #(_, curr_max) = acc
+      let i_size = grid.get(uf.sizes, 0, i)
+      case i_size > curr_max {
+        True -> #(i, i_size)
+        False -> acc
+      }
+    })
+  let res =
+    list.range(1, dna_record.size)
+    |> list.fold(0, fn(acc, i) {
+      let #(parent, _) = find(uf, i)
+      case parent == max_idx {
+        True -> acc + i
+        False -> acc
+      }
+    })
+  res |> int.to_string
 }
 
 pub fn solve(part: Int) -> String {

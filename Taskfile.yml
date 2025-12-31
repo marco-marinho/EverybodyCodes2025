@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: '3'
+
+tasks:
+  build:
+    desc: Builds Rust NIF library
+    dir: rslib
+    cmds:
+      - cargo build --release
+      - install -m 775 target/release/librslib.so ../priv/librslib.so

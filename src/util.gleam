@@ -72,3 +72,19 @@ pub fn zip3(list1: List(a), list2: List(b), list3: List(c)) -> List(#(a, b, c)) 
     _, _, _ -> []
   }
 }
+
+pub fn count_set_bits(n: Int) -> Int {
+  count_set_bits_helper(n, 0)
+}
+
+fn count_set_bits_helper(n: Int, count: Int) -> Int {
+  case n {
+    0 -> count
+    _ -> {
+      case n % 2 {
+        1 -> count_set_bits_helper(int.bitwise_shift_right(n, 1), count + 1)
+        _ -> count_set_bits_helper(int.bitwise_shift_right(n, 1), count)
+      }
+    }
+  }
+}
