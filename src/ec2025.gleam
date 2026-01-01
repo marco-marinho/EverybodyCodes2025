@@ -11,6 +11,7 @@ import quests/quest07
 import quests/quest08
 import quests/quest09
 import quests/quest10
+import quests/quest11
 
 pub fn main() -> Nil {
   let args = argv.load().arguments
@@ -33,6 +34,7 @@ pub fn main() -> Nil {
     8 -> quest08.solve(part)
     9 -> quest09.solve(part)
     10 -> quest10.solve(part)
+    11 -> quest11.solve(part)
     _ -> "Quest not implemented"
   }
   result |> io.println

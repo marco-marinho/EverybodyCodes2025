@@ -100,7 +100,42 @@ fn do_turn(
   #(post_turn, eaten_pre_turn + eaten_post_turn)
 }
 
-fn do_turn_2(
+fn try_sheep_turn(
+  game_state: GameState,
+  shelters: set.Set(#(Int, Int)),
+  grid_size: GridSize,
+  memo: dict.Dict(GameState, Int),
+) -> #(Int, dict.Dict(GameState, Int), Bool) {
+  use acc, s <- list.fold(game_state.sheep, #(0, memo, False))
+  let #(s_acc, m_acc, c_acc) = acc
+  let next_row = s.row + 1
+  let is_shelter = set.contains(shelters, #(next_row, s.col))
+  let is_dragon = #(next_row, s.col) == game_state.dragon
+  case next_row, s.col {
+    _, _ if is_dragon && !is_shelter -> #(s_acc, m_acc, c_acc)
+    n, _ if n >= grid_size.rows -> #(s_acc, m_acc, True)
+    n, _ -> {
+      let next_sheep =
+        [
+          Sheep(..s, row: n),
+          ..list.filter(game_state.sheep, fn(x) { x.id != s.id })
+        ]
+        |> list.sort(fn(a, b) { int.compare(a.id, b.id) })
+      let next_state =
+        GameState(
+          dragon: game_state.dragon,
+          sheep: next_sheep,
+          turn: DragonTurn,
+          sheep_left: game_state.sheep_left,
+        )
+      let #(solutions, new_memo) =
+        solve_3(next_state, shelters, grid_size, m_acc)
+      #(s_acc + solutions, new_memo, True)
+    }
+  }
+}
+
+fn solve_3(
   game_state: GameState,
   shelters: set.Set(#(Int, Int)),
   grid_size: GridSize,
@@ -112,47 +147,12 @@ fn do_turn_2(
       case game_state.sheep_left, game_state.turn {
         0, _ -> #(1, memo)
         _, SheepTurn -> {
-          let #(res, omemo, moved) = {
-            use #(s_acc, m_acc, c_acc), s <- list.fold(game_state.sheep, #(
-              0,
-              memo,
-              False,
-            ))
-            let next_row = s.row + 1
-            let is_shelter = set.contains(shelters, #(next_row, s.col))
-            case next_row, s.col {
-              n, m if game_state.dragon == #(n, m) && !is_shelter -> #(
-                s_acc,
-                m_acc,
-                c_acc,
-              )
-              n, _ if n >= grid_size.rows -> #(s_acc, m_acc, True)
-              n, _ -> {
-                let next_sheep =
-                  [
-                    Sheep(..s, row: n),
-                    ..list.filter(game_state.sheep, fn(x) { x.id != s.id })
-                  ]
-                  |> list.sort(fn(a, b) { int.compare(a.id, b.id) })
-                let next_state =
-                  GameState(
-                    dragon: game_state.dragon,
-                    sheep: next_sheep,
-                    turn: DragonTurn,
-                    sheep_left: game_state.sheep_left,
-                  )
-                let #(solutions, new_memo) =
-                  do_turn_2(next_state, shelters, grid_size, m_acc)
-                #(s_acc + solutions, new_memo, True)
-              }
-            }
-          }
-          case moved {
-            True -> #(res, dict.insert(omemo, game_state, res))
-            False -> {
+          case try_sheep_turn(game_state, shelters, grid_size, memo) {
+            #(res, omemo, True) -> #(res, dict.insert(omemo, game_state, res))
+            #(_, _, False) -> {
               let next_state = GameState(..game_state, turn: DragonTurn)
               let #(res, new_memo) =
-                do_turn_2(next_state, shelters, grid_size, memo)
+                solve_3(next_state, shelters, grid_size, memo)
               #(res, dict.insert(new_memo, game_state, res))
             }
           }
@@ -189,7 +189,7 @@ fn do_turn_2(
                   sheep_left: game_state.sheep_left - eaten_count,
                 )
               let #(solutions, new_memo) =
-                do_turn_2(next_state, shelters, grid_size, curr_memo)
+                solve_3(next_state, shelters, grid_size, curr_memo)
               #(sol_acc + solutions, new_memo)
             })
           #(res, dict.insert(omemo, game_state, res))
@@ -272,8 +272,7 @@ fn part3() -> String {
       turn: SheepTurn,
       sheep_left: list.length(sheep),
     )
-  let #(solutions, _) =
-    do_turn_2(starting_state, shelters, grid_size, dict.new())
+  let #(solutions, _) = solve_3(starting_state, shelters, grid_size, dict.new())
   solutions |> int.to_string |> io.println
   ""
 }
