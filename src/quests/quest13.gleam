@@ -9,9 +9,7 @@ type Range {
 }
 
 fn line_to_range(line: String, reverse: Bool) -> Range {
-  let parts = string.split(line, "-")
-  let assert Ok(start_str) = list.first(parts)
-  let assert Ok(end_str) = list.drop(parts, 1) |> list.first
+  let assert [start_str, end_str] = string.split(line, "-")
   let assert Ok(start) = start_str |> int.parse
   let assert Ok(end) = end_str |> int.parse
   Range(start, end, end - start + 1, reverse)

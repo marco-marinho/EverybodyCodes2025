@@ -32,3 +32,14 @@ pub fn to_string(grid: Grid) -> String {
   })
   |> string.join("\n")
 }
+
+pub fn to_hash(grid: Grid) -> Int {
+  list.range(0, grid.rows - 1)
+  |> list.fold(0, fn(acc, row) {
+    list.range(0, grid.cols - 1)
+    |> list.fold(acc, fn(acc2, col) {
+      let val = get(grid, row, col)
+      int.bitwise_shift_left(acc2, 1) + val
+    })
+  })
+}
