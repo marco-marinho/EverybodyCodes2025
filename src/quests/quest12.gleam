@@ -11,7 +11,8 @@ fn part2() -> String {
 }
 
 fn part3() -> String {
-  todo
+  let res = rslib_ffi.quest12_3()
+  res
 }
 
 pub fn solve(part: Int) -> String {

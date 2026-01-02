@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::collections::VecDeque;
 use std::fs;
@@ -79,7 +80,7 @@ fn to_int_grid(input: &str) -> Vec<Vec<i64>> {
         .collect()
 }
 
-fn q12_1(start: Vec<(usize, usize)>, grid: &Vec<Vec<i64>>) -> usize {
+fn q12_1(start: Vec<(usize, usize)>, grid: &Vec<Vec<i64>>) -> HashSet<(usize, usize)> {
     let directions = [(-1, 0), (1, 0), (0, -1), (0, 1)];
     let rows = grid.len() as i64;
     let cols = grid[0].len() as i64;
@@ -110,7 +111,45 @@ fn q12_1(start: Vec<(usize, usize)>, grid: &Vec<Vec<i64>>) -> usize {
         }
         queue = next_queue;
     }
-    visited.len()
+    visited
+}
+
+fn q12_dfs(
+    grid: &Vec<Vec<i64>>,
+    to_skip: &HashSet<(usize, usize)>,
+    level: i64,
+    memo: &mut HashMap<(usize, usize), HashSet<(usize, usize)>>,
+) -> HashSet<(usize, usize)> {
+    if level == 3 {
+        return HashSet::new();
+    }
+    let rows = grid.len();
+    let cols = grid[0].len();
+    let mut visited: HashSet<(usize, usize)> = HashSet::new();
+    let mut ans: HashSet<(usize, usize)> = HashSet::new();
+    let mut max_size = 0;
+    for row in 0..rows {
+        for col in 0..cols {
+            if visited.contains(&(row, col)) || to_skip.contains(&(row, col)) {
+                continue;
+            }
+            let res: HashSet<(usize, usize)> = if memo.contains_key(&(row, col)) {
+                memo.get(&(row, col)).unwrap().clone()
+            } else {
+                let computed = q12_1(vec![(row, col)], grid);
+                memo.insert((row, col), computed.clone());
+                computed
+            };
+            let result: HashSet<(usize, usize)> = res.difference(&to_skip).cloned().collect();
+            visited.extend(&res);
+            if max_size < (result.len() + result.len()) {
+                max_size = result.len() + result.len();
+                ans = result.union(&to_skip).cloned().collect();
+            }
+        }
+    }
+    let next = q12_dfs(grid, &ans, level + 1, memo);
+    ans.union(&next).cloned().collect()
 }
 
 #[rustler::nif]
@@ -118,7 +157,7 @@ pub fn quest12_1() -> String {
     let input = fs::read_to_string("data/quest12_1.txt").unwrap_or("".to_string());
     let grid = to_int_grid(&input);
     let res = q12_1(vec![(0, 0)], &grid);
-    res.to_string()
+    res.len().to_string()
 }
 
 #[rustler::nif]
@@ -128,7 +167,16 @@ pub fn quest12_2() -> String {
     let rows = grid.len();
     let cols = grid[0].len();
     let res = q12_1(vec![(0, 0), (rows - 1, cols - 1)], &grid);
-    res.to_string()
+    res.len().to_string()
+}
+
+#[rustler::nif]
+pub fn quest12_3() -> String {
+    let input = fs::read_to_string("data/quest12_3.txt").unwrap_or("".to_string());
+    let grid = to_int_grid(&input);
+    let mut memo = HashMap::new();
+    let res = q12_dfs(&grid, &HashSet::new(), 0, &mut memo);
+    res.len().to_string()
 }
 
 rustler::init!("librs");

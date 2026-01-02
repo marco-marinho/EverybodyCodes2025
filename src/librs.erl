@@ -1,6 +1,6 @@
 -module(librs).
--export([quest10_1/0, quest12_1/0, quest12_2/0]).
--nifs([quest10_1/0, quest12_1/0, quest12_2/0]).
+-export([quest10_1/0, quest12_1/0, quest12_2/0, quest12_3/0]).
+-nifs([quest10_1/0, quest12_1/0, quest12_2/0, quest12_3/0]).
 -on_load(init/0).
 
 init() ->
@@ -13,4 +13,7 @@ quest12_1() ->
     exit(nif_library_not_loaded).
 
 quest12_2() ->
+    exit(nif_library_not_loaded).
+
+quest12_3() ->
     exit(nif_library_not_loaded).
