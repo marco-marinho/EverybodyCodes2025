@@ -1,7 +1,9 @@
 import atomics_ffi
 import gleam/int
+import gleam/io
 import gleam/list
 import gleam/string
+import gleam/yielder
 
 pub type Grid {
   Grid(data: atomics_ffi.Atomics, rows: Int, cols: Int)
@@ -42,4 +44,27 @@ pub fn to_hash(grid: Grid) -> Int {
       int.bitwise_shift_left(acc2, 1) + val
     })
   })
+}
+
+fn line_to_string(val: Int, acc: String, left: Int) -> String {
+  case left {
+    0 -> acc
+    _ -> {
+      let char = case val % 2 {
+        1 -> "#"
+        _ -> "."
+      }
+      line_to_string(int.bitwise_shift_right(val, 1), char <> acc, left - 1)
+    }
+  }
+}
+
+pub fn print_binary_grid(igrid: Grid, size: Int) {
+  let lines =
+    yielder.range(0, igrid.cols - 1)
+    |> yielder.map(fn(idx) {
+      let val = get(igrid, 0, idx)
+      line_to_string(val, "", size)
+    })
+  yielder.each(lines, fn(line) { io.println(line) })
 }
