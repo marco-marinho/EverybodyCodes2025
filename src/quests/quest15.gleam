@@ -90,7 +90,6 @@ fn djkistras(
   board: grid.Grid,
   target_point: Point,
 ) -> Int {
-  let #(xs_array, ys_array) = uncompressed_map
   case pq.is_empty(queue) {
     True -> -1
     False -> {
@@ -102,6 +101,7 @@ fn djkistras(
         _, True ->
           djkistras(nqueue, uncompressed_map, seen, board, target_point)
         _, _ -> {
+          let #(xs_array, ys_array) = uncompressed_map
           let assert Ok(curr_x_real) =
             glearray.get(xs_array, current.position.x)
           let assert Ok(curr_y_real) =

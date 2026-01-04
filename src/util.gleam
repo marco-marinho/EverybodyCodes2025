@@ -88,3 +88,24 @@ fn count_set_bits_helper(n: Int, count: Int) -> Int {
     }
   }
 }
+
+pub fn gcd(a: Int, b: Int) -> Int {
+  case b {
+    0 -> int.absolute_value(a)
+    _ -> gcd(b, a % b)
+  }
+}
+
+pub fn lcm(a: Int, b: Int) -> Int {
+  case a, b {
+    0, _ | _, 0 -> 0
+    _, _ -> int.absolute_value(a * b) / gcd(a, b)
+  }
+}
+
+pub fn list_lcm(numbers: List(Int)) -> Int {
+  case numbers {
+    [] -> 0
+    [first, ..rest] -> list.fold(rest, first, lcm)
+  }
+}
