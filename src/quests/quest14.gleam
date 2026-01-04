@@ -93,19 +93,19 @@ fn find_cycle(
     |> yielder.fold(0, fn(acc, col) {
       int.bitwise_shift_left(acc, 32) + grid.get(next_grid, 0, col)
     })
-  let center = get_center(next_grid)
-  let has_desired =
-    yielder.range(0, 7)
-    |> yielder.all(fn(idx) {
-      grid.get(center, 0, idx) == grid.get(target, 0, idx + 1)
-    })
-  let next_detected = case has_desired {
-    True -> dict.insert(detected, step, count_active(next_grid))
-    False -> detected
-  }
   case set.contains(seen, grid_hash) {
-    True -> #(step - 1, next_detected)
-    False ->
+    True -> #(step - 1, detected)
+    False -> {
+      let center = get_center(next_grid)
+      let has_target =
+        yielder.range(0, 7)
+        |> yielder.all(fn(idx) {
+          grid.get(center, 0, idx) == grid.get(target, 0, idx + 1)
+        })
+      let next_detected = case has_target {
+        True -> dict.insert(detected, step, count_active(next_grid))
+        False -> detected
+      }
       find_cycle(
         next_grid,
         mask,
@@ -114,6 +114,7 @@ fn find_cycle(
         set.insert(seen, grid_hash),
         step + 1,
       )
+    }
   }
 }
 
