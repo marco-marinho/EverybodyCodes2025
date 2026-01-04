@@ -70,8 +70,8 @@ fn binary_seach(
   }
 }
 
-fn part1() -> String {
-  let assert [input] = util.read_input_lines(16, 1)
+fn parse(part: Int) -> List(Int) {
+  let assert [input] = util.read_input_lines(16, part)
   let numbers =
     input
     |> string.split(",")
@@ -79,46 +79,36 @@ fn part1() -> String {
       let assert Ok(n) = int.parse(s)
       n
     })
+  numbers
+}
+
+fn find_components(numbers: List(Int)) -> List(Int) {
+  let grid_init = grid.create_grid(1, { numbers |> list.length } + 1)
+  let numbers_grid =
+    list.index_fold(numbers, grid_init, fn(acc, n, i) {
+      grid.set(acc, 0, i + 1, n)
+    })
+  p2(numbers_grid, 1, [])
+}
+
+fn part1() -> String {
+  let numbers = parse(1)
   let res = p1(numbers, 90, 0)
   res |> int.to_string
 }
 
 fn part2() -> String {
-  let assert [input] = util.read_input_lines(16, 2)
-  let numbers =
-    input
-    |> string.split(",")
-    |> list.map(fn(s) {
-      let assert Ok(n) = int.parse(s)
-      n
-    })
-  let grid_init = grid.create_grid(1, { numbers |> list.length } + 1)
-  let numbers_grid =
-    list.index_fold(numbers, grid_init, fn(acc, n, i) {
-      grid.set(acc, 0, i + 1, n)
-    })
-  let res = p2(numbers_grid, 1, [])
-  res
+  let numbers = parse(2)
+  let components = find_components(numbers)
+  components
   |> list.fold(1, fn(a, b) { a * b })
   |> int.to_string
 }
 
 fn part3() -> String {
-  let assert [input] = util.read_input_lines(16, 3)
+  let numbers = parse(3)
   let target = 202_520_252_025_000
-  let numbers =
-    input
-    |> string.split(",")
-    |> list.map(fn(s) {
-      let assert Ok(n) = int.parse(s)
-      n
-    })
-  let grid_init = grid.create_grid(1, { numbers |> list.length } + 1)
-  let numbers_grid =
-    list.index_fold(numbers, grid_init, fn(acc, n, i) {
-      grid.set(acc, 0, i + 1, n)
-    })
-  let components = p2(numbers_grid, 1, [])
+  let components = find_components(numbers)
   let res = binary_seach(1, target, components, target, 0)
   res |> int.to_string
 }
