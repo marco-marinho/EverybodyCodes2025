@@ -4,6 +4,7 @@ import gleam/io
 import gleam/list
 import gleam/string
 import gleam/yielder
+import util
 
 pub type Grid {
   Grid(data: atomics_ffi.Atomics, rows: Int, cols: Int)
@@ -44,6 +45,17 @@ pub fn to_hash(grid: Grid) -> Int {
       int.bitwise_shift_left(acc2, 1) + val
     })
   })
+}
+
+pub fn from_list(elements: List(List(Int))) -> Grid {
+  let rows = list.length(elements)
+  let cols = list.first(elements) |> util.force_unwrap |> list.length
+  let out = {
+    use acc, ilist, row <- list.index_fold(elements, create_grid(rows, cols))
+    use acc2, el, col <- list.index_fold(ilist, acc)
+    set(acc2, row, col, el)
+  }
+  out
 }
 
 fn line_to_string(val: Int, acc: String, left: Int) -> String {
