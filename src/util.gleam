@@ -109,3 +109,16 @@ pub fn list_lcm(numbers: List(Int)) -> Int {
     [first, ..rest] -> list.fold(rest, first, lcm)
   }
 }
+
+pub fn split_on(items: List(a), is_delimiter: fn(a) -> Bool) -> List(List(a)) {
+  case items {
+    [] -> []
+    _ -> {
+      let #(segment, rest) = list.split_while(items, fn(x) { !is_delimiter(x) })
+      case rest {
+        [] -> [segment]
+        [_, ..tail] -> [segment, ..split_on(tail, is_delimiter)]
+      }
+    }
+  }
+}
