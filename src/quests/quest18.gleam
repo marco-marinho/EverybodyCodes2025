@@ -1,6 +1,5 @@
 import gleam/dict
 import gleam/int
-import gleam/io
 import gleam/list
 import gleam/string
 import glearray
@@ -102,13 +101,8 @@ fn get_best(iarray: glearray.Array(RootResult)) -> RootResult {
 fn tournament_round(population: glearray.Array(RootResult)) -> Int {
   let n = glearray.length(population)
   let #(winner_idx, _) =
-    [
-      int.random(n),
-      int.random(n),
-      int.random(n),
-      int.random(n),
-      int.random(n),
-    ]
+    list.range(1, 5)
+    |> list.map(fn(_) { int.random(n) })
     |> list.fold(#(0, 0), fn(acc, idx) {
       let assert Ok(entry) = glearray.get(population, idx)
       let #(_, val) = entry
@@ -208,9 +202,7 @@ fn part1() -> String {
     |> list.map(fn(x) { #(x, 1) })
     |> dict.from_list
   let res = eval_plant(target_id, plants, active_roots)
-  res |> string.inspect |> io.println
-
-  ""
+  res |> int.to_string
 }
 
 fn part2() -> String {
