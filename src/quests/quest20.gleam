@@ -34,11 +34,13 @@ fn rotate(triangle: Triangle, n: Int) -> Triangle {
 fn get_neighbours(triangle: Triangle) -> List(Coord3D) {
   case triangle {
     TypeA(x, y, z, _) -> [
+      Coord3D(x, y, z),
       Coord3D(x + 1, y, z),
       Coord3D(x, y + 1, z),
       Coord3D(x, y, z + 1),
     ]
     TypeB(x, y, z, _) -> [
+      Coord3D(x, y, z),
       Coord3D(x - 1, y, z),
       Coord3D(x, y - 1, z),
       Coord3D(x, y, z - 1),
@@ -129,7 +131,7 @@ fn djkistras(
           }
           let neighbors = rotated |> get_neighbours
           let filtered_neighbors =
-            [Coord3D(rotated.x, rotated.y, rotated.z), ..neighbors]
+            neighbors
             |> list.filter(fn(p) {
               !set.contains(seen, p)
               && dict.has_key(grid, p)
