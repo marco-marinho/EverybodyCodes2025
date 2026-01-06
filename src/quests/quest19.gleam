@@ -100,34 +100,26 @@ fn opening_dict_to_list(
   |> list.sort(fn(a, b) { int.compare(a.position, b.position) })
 }
 
-fn part1() -> String {
-  let input = util.read_input_lines(19, 1)
+fn solution(part: Int) -> String {
+  let input = util.read_input_lines(19, part)
   let openings_dict =
     input
     |> list.fold(dict.new(), fn(acc, x) { parse_line(x, acc) })
   let openings = opening_dict_to_list(openings_dict)
   let #(res, _) = dfs(State(position: 0, height: 0), openings, dict.new())
   res |> util.force_unwrap |> string.inspect
+}
+
+fn part1() -> String {
+  solution(1)
 }
 
 fn part2() -> String {
-  let input = util.read_input_lines(19, 2)
-  let openings_dict =
-    input
-    |> list.fold(dict.new(), fn(acc, x) { parse_line(x, acc) })
-  let openings = opening_dict_to_list(openings_dict)
-  let #(res, _) = dfs(State(position: 0, height: 0), openings, dict.new())
-  res |> util.force_unwrap |> string.inspect
+  solution(2)
 }
 
 fn part3() -> String {
-  let input = util.read_input_lines(19, 3)
-  let openings_dict =
-    input
-    |> list.fold(dict.new(), fn(acc, x) { parse_line(x, acc) })
-  let openings = opening_dict_to_list(openings_dict)
-  let #(res, _) = dfs(State(position: 0, height: 0), openings, dict.new())
-  res |> util.force_unwrap |> string.inspect
+  solution(3)
 }
 
 pub fn solve(part: Int) -> String {
